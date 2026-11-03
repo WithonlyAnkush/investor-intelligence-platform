@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # FastAPI Backend URL
-API_URL = "http://127.0.0.1:8000"
+API_URL = "https://investor-intelligence-backend.onrender.com"
 
 st.set_page_config(
     page_title="Investor Intelligence Platform", 
