@@ -1,16 +1,17 @@
 import os
 import json
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
 from groq import Groq
 from dotenv import load_dotenv
+from fastembed import TextEmbedding
 
 load_dotenv()
 
-# 1. Initialize local embedding model (downloads ~90MB weights once on first run)
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+# Initialize lightweight embedding model (uses ONNX, tiny memory footprint)
+print("Loading embedding model...")
+embedding_model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-# 2. Initialize Groq client
+# Initialize Groq client
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY is missing from your .env file.")
@@ -51,9 +52,13 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 150) -> list[st
 
 
 def get_embedding(text: str) -> list[float]:
-    """Generates a 384-dimensional dense vector representation of the text."""
-    embedding = embedding_model.encode(text, convert_to_numpy=True)
-    return embedding.tolist()
+    """
+    Generates a 384-dimensional vector embedding using fastembed.
+    """
+    # fastembed returns a generator of numpy arrays, we convert the first result to a list
+    embeddings_generator = embedding_model.embed([text])
+    vector = next(embeddings_generator)
+    return vector.tolist()
 
 
 def extract_kpis_with_llm(report_summary: str, fiscal_year: int) -> list[dict]:
